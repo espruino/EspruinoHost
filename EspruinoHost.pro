@@ -4,7 +4,8 @@
 #
 #-------------------------------------------------
 
-QT       += core gui websockets
+QT       += core gui
+QT       += websockets serialport
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
