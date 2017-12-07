@@ -5,6 +5,15 @@ openssl req -newkey rsa:2048 -nodes -keyout localhost.key -x509 -days 365 -out l
 
 Put in the same folder as the executable
 
+### LINUX
+
+You need to install these dependencies before building or Bluetooth will silently fall back to a dummy version
+
+```
+sudo apt-get install libbluetooth-dev bluetooth blueman bluez libusb-dev libdbus-1-dev bluez-hcidump bluez-tools
+```
+
+
 
 ```
 {"type":"list"}

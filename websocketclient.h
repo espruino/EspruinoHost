@@ -6,12 +6,13 @@
 
 QT_FORWARD_DECLARE_CLASS(QWebSocket)
 QT_FORWARD_DECLARE_CLASS(QJsonObject)
+QT_FORWARD_DECLARE_CLASS(MainWindow)
 
 class WebSocketClient : public QObject
 {
     Q_OBJECT
 public:
-    explicit WebSocketClient(QObject *parent = nullptr);
+    explicit WebSocketClient(QObject *parent = nullptr, MainWindow *mainWindow = nullptr);
     ~WebSocketClient();
 
     void receive(QString message); // data received from remote computer
@@ -19,6 +20,9 @@ public:
     void send(QJsonObject json); // send to remote computer
 
     QWebSocket *pWebSocket;
+
+private:
+    MainWindow *m_pMainWindow;
 
     enum { CT_DISCONNECTED, CT_SERIALPORT } m_connectionType;
     int m_bytesWriting;

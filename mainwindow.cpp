@@ -7,11 +7,16 @@ MainWindow::MainWindow(QWidget *parent) :
 {
     ui->setupUi(this);
 
+    m_bleFinder = new BleFinder(this);
+    m_server = new SslServer(this, this);
+
 }
 
 MainWindow::~MainWindow()
 {
     delete ui;
+    delete m_bleFinder;
+    delete m_server;
 }
 
 void MainWindow::on_actionQuit_triggered()

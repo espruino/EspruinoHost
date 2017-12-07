@@ -5,7 +5,7 @@
 #-------------------------------------------------
 
 QT       += core gui
-QT       += websockets serialport
+QT       += websockets serialport bluetooth
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -28,12 +28,14 @@ SOURCES += \
         main.cpp \
         mainwindow.cpp \
     sslserver.cpp \
-    websocketclient.cpp
+    websocketclient.cpp \
+    blefinder.cpp
 
 HEADERS += \
         mainwindow.h \
     sslserver.h \
-    websocketclient.h
+    websocketclient.h \
+    blefinder.h
 
 FORMS += \
         mainwindow.ui

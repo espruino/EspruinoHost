@@ -9,13 +9,17 @@
 
 QT_FORWARD_DECLARE_CLASS(QWebSocketServer)
 QT_FORWARD_DECLARE_CLASS(QWebSocket)
+QT_FORWARD_DECLARE_CLASS(MainWindow)
 
 class SslServer : public QObject
 {
     Q_OBJECT
 public:
-    explicit SslServer(QObject *parent = nullptr);
+    explicit SslServer(QObject *parent = nullptr, MainWindow *mainWindow = nullptr);
     ~SslServer();
+
+private:
+    MainWindow *m_pMainWindow;
 
 private Q_SLOTS:
     void onNewConnection();

@@ -8,9 +8,10 @@
 
 #include "websocketclient.h"
 
-SslServer::SslServer(QObject *parent) :
+SslServer::SslServer(QObject *parent, MainWindow *mainWindow) :
     QObject(parent),
-    m_pWebSocketServer(Q_NULLPTR)
+    m_pMainWindow(mainWindow),
+    m_pWebSocketServer(nullptr)
 {
     m_pWebSocketServer = new QWebSocketServer(QStringLiteral("SSL Echo Server"),
                                               QWebSocketServer::SecureMode,
@@ -46,12 +47,13 @@ SslServer::~SslServer()
 {
     m_pWebSocketServer->close();
     qDeleteAll(m_clients.begin(), m_clients.end());
+    m_clients.clear();
 }
 
 void SslServer::onNewConnection()
 {
     QWebSocket *pSocket = m_pWebSocketServer->nextPendingConnection();
-    WebSocketClient *wsClient = new WebSocketClient();
+    WebSocketClient *wsClient = new WebSocketClient(nullptr, m_pMainWindow);
     wsClient->pWebSocket = pSocket;
 
     qDebug() << "Client connected:" << pSocket->peerName() << pSocket->origin();

@@ -3,6 +3,7 @@
 
 #include <QMainWindow>
 #include "sslserver.h"
+#include "blefinder.h"
 
 namespace Ui {
 class MainWindow;
@@ -16,7 +17,8 @@ public:
     explicit MainWindow(QWidget *parent = 0);
     ~MainWindow();
 
-    SslServer server;
+    SslServer *m_server;
+    BleFinder *m_bleFinder;
 
 private slots:
     void on_actionQuit_triggered();

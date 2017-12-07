@@ -1,4 +1,6 @@
 #include "websocketclient.h"
+#include "mainwindow.h"
+
 #include <QJsonObject>
 #include <QJsonArray>
 #include <QJsonDocument>
@@ -7,14 +9,14 @@
 #include <QtSerialPort/QtSerialPort>
 #include "QtWebSockets/QWebSocket"
 
-WebSocketClient::WebSocketClient(QObject *parent) :
+WebSocketClient::WebSocketClient(QObject *parent, MainWindow *mainWindow) :
     QObject(parent),
     pWebSocket(nullptr),
+    m_pMainWindow(mainWindow),
     m_connectionType(CT_DISCONNECTED),
     m_bytesWriting(0),
     m_ifSerialPort()
 {
-
     connect(&m_ifSerialPort, &QSerialPort::readyRead, this, &WebSocketClient::handleSerialReadyRead);
     connect(&m_ifSerialPort, &QSerialPort::bytesWritten, this, &WebSocketClient::handleSerialBytesWritten);
     connect(&m_ifSerialPort, &QSerialPort::errorOccurred, this, &WebSocketClient::handleSerialError);
@@ -39,6 +41,7 @@ void WebSocketClient::receive(QString message) // data received from remote comp
         QJsonObject json;
         json["type"] = QJsonValue("list");
         QJsonArray jsPortList;
+        // Serial
         QList<QSerialPortInfo> serialPorts = QSerialPortInfo::availablePorts();
         for (int i=0; i<serialPorts.size();i++) {
             QSerialPortInfo serialPort = serialPorts.at(i);
@@ -48,6 +51,17 @@ void WebSocketClient::receive(QString message) // data received from remote comp
             jsPort["path"] = QJsonValue(serialPort.systemLocation());
             jsPortList.append(jsPort);
         }
+        // Bluetooth
+        QList<const QBluetoothDeviceInfo*> bleDevices = m_pMainWindow->m_bleFinder->getDevices();
+        for (int i=0; i<bleDevices.size();i++) {
+            const QBluetoothDeviceInfo *bleDevice = bleDevices.at(i);
+            QJsonObject jsPort;
+            jsPort["type"] = QJsonValue("bluetooth");
+            jsPort["description"] = QJsonValue(bleDevice->name());
+            jsPort["path"] = QJsonValue(bleDevice->address().toString());
+            jsPortList.append(jsPort);
+        }
+        // Send response
         json["ports"] = jsPortList;
         send(json);
     } else if (jType=="connect") {
@@ -87,9 +101,10 @@ void WebSocketClient::receive(QString message) // data received from remote comp
     } else if (jType=="write") {
         QString jData = json["data"].toString();
         QByteArray arr = jData.toUtf8();
-        m_bytesWriting += arr.length;
+        m_bytesWriting += arr.length();
         if (m_connectionType==CT_SERIALPORT) {
             qint64 bytesWritten = m_ifSerialPort.write(arr);
+            // FIXME: compare written vs writing byte count
         } else {
             qDebug() << "Not connected for write";
         }
