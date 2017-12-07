@@ -52,13 +52,13 @@ void WebSocketClient::receive(QString message) // data received from remote comp
             jsPortList.append(jsPort);
         }
         // Bluetooth
-        QList<const QBluetoothDeviceInfo*> bleDevices = m_pMainWindow->m_bleFinder->getDevices();
+        QList<QBluetoothDeviceInfo> bleDevices = m_pMainWindow->m_bleFinder->getDevices();
         for (int i=0; i<bleDevices.size();i++) {
-            const QBluetoothDeviceInfo *bleDevice = bleDevices.at(i);
+            const QBluetoothDeviceInfo &bleDevice = bleDevices.at(i);
             QJsonObject jsPort;
             jsPort["type"] = QJsonValue("bluetooth");
-            jsPort["description"] = QJsonValue(bleDevice->name());
-            jsPort["path"] = QJsonValue(bleDevice->address().toString());
+            jsPort["description"] = QJsonValue(bleDevice.name());
+            jsPort["path"] = QJsonValue(bleDevice.address().toString());
             jsPortList.append(jsPort);
         }
         // Send response

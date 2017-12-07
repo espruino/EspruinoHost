@@ -13,7 +13,7 @@ public:
     explicit BleFinder(QObject *parent = nullptr);
     ~BleFinder();
 
-    QList<const QBluetoothDeviceInfo*> getDevices();
+    QList<QBluetoothDeviceInfo> getDevices();
     void forceStop();
 
 signals:
@@ -27,7 +27,7 @@ public slots:
 
 private:
     QBluetoothDeviceDiscoveryAgent *m_deviceDiscoveryAgent;
-    QList<const QBluetoothDeviceInfo*> m_devices;
+    QList<QBluetoothDeviceInfo> m_devices;
     QTimer m_scanTimer;
 };
 

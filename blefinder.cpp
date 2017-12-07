@@ -28,7 +28,7 @@ BleFinder::~BleFinder()
     m_devices.clear();
 }
 
-QList<const QBluetoothDeviceInfo*> BleFinder::getDevices()
+QList<QBluetoothDeviceInfo> BleFinder::getDevices()
 {
     if (!m_deviceDiscoveryAgent->isActive()) {
         qDebug() << "Starting scan";
@@ -51,8 +51,8 @@ void BleFinder::addDevice(const QBluetoothDeviceInfo &device)
 {
     // If device is LowEnergy-device, add it to the list
     if (device.coreConfigurations() & QBluetoothDeviceInfo::LowEnergyCoreConfiguration) {
-        m_devices.append(&device);
-        qDebug() << "Low Energy device found. Scanning more...";
+        m_devices.append(device);
+        qDebug() << "BLE: device found:" << device.name();
     }
 }
 
