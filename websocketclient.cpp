@@ -15,11 +15,15 @@ WebSocketClient::WebSocketClient(QObject *parent, MainWindow *mainWindow) :
     m_pMainWindow(mainWindow),
     m_connectionType(CT_DISCONNECTED),
     m_bytesWriting(0),
-    m_ifSerialPort()
+    m_ifSerialPort(this),
+    m_ifBluetooth(this)
 {
     connect(&m_ifSerialPort, &QSerialPort::readyRead, this, &WebSocketClient::handleSerialReadyRead);
     connect(&m_ifSerialPort, &QSerialPort::bytesWritten, this, &WebSocketClient::handleSerialBytesWritten);
     connect(&m_ifSerialPort, &QSerialPort::errorOccurred, this, &WebSocketClient::handleSerialError);
+
+    connect(&m_ifBluetooth, &BleUART::connectionChanged, this, &WebSocketClient::handleBluetoothConnection);
+    connect(&m_ifBluetooth, &BleUART::dataReceived, this, &WebSocketClient::handleBluetoothData);
 
 }
 
@@ -46,7 +50,7 @@ void WebSocketClient::receive(QString message) // data received from remote comp
         for (int i=0; i<serialPorts.size();i++) {
             QSerialPortInfo serialPort = serialPorts.at(i);
             QJsonObject jsPort;
-            jsPort["type"] = QJsonValue("serial");
+            jsPort["interface"] = QJsonValue("serial");
             jsPort["description"] = QJsonValue(serialPort.description());
             jsPort["path"] = QJsonValue(serialPort.systemLocation());
             jsPortList.append(jsPort);
@@ -55,10 +59,12 @@ void WebSocketClient::receive(QString message) // data received from remote comp
         QList<QBluetoothDeviceInfo> bleDevices = m_pMainWindow->m_bleFinder->getDevices();
         for (int i=0; i<bleDevices.size();i++) {
             const QBluetoothDeviceInfo &bleDevice = bleDevices.at(i);
+            if (bleDevice.isCached() || !bleDevice.isValid()) continue;
             QJsonObject jsPort;
-            jsPort["type"] = QJsonValue("bluetooth");
+            jsPort["interface"] = QJsonValue("bluetooth");
             jsPort["description"] = QJsonValue(bleDevice.name());
-            jsPort["path"] = QJsonValue(bleDevice.address().toString());
+            jsPort["rssi"] = QJsonValue(bleDevice.rssi());
+            jsPort["path"] = QJsonValue(m_pMainWindow->m_bleFinder->getDeviceAddress(bleDevice));
             jsPortList.append(jsPort);
         }
         // Send response
@@ -88,12 +94,28 @@ void WebSocketClient::receive(QString message) // data received from remote comp
                 json["message"] = QJsonValue(metaEnum.valueToKey(m_ifSerialPort.error()));
                 send(json);
             }
-        } else {
+        } else if (jInterface=="bluetooth") {
+            const QBluetoothDeviceInfo *device = m_pMainWindow->m_bleFinder->findDeviceByAddress(jPath);
+            if (device) {
+                m_pMainWindow->m_bleFinder->forceStop();
+                m_ifBluetooth.connectToDevice(*device);
+                send("{\"type\":\"connect\"}");
+                m_connectionType=CT_BLUETOOTH;
+            } else {
+                QJsonObject json;
+                json["type"] = QJsonValue("error");
+                json["message"] = QJsonValue("Device not found");
+                send(json);
+            }
+        } else{
             qDebug() << "Unknown interface " << jInterface << " for 'connect'";
         }
     } else if (jType=="disconnect") {
         if (m_connectionType==CT_SERIALPORT) {
             m_ifSerialPort.close();
+            m_connectionType = CT_DISCONNECTED;
+        } else if (m_connectionType==CT_BLUETOOTH) {
+            m_ifBluetooth.disconnect();
             m_connectionType = CT_DISCONNECTED;
         } else {
             qDebug() << "Not connected for disconnect";
@@ -105,6 +127,8 @@ void WebSocketClient::receive(QString message) // data received from remote comp
         if (m_connectionType==CT_SERIALPORT) {
             qint64 bytesWritten = m_ifSerialPort.write(arr);
             // FIXME: compare written vs writing byte count
+        } else if (m_connectionType==CT_BLUETOOTH) {
+            m_ifBluetooth.write(arr);
         } else {
             qDebug() << "Not connected for write";
         }
@@ -161,4 +185,17 @@ void WebSocketClient::handleSerialError(QSerialPort::SerialPortError serialPortE
                             .arg(m_ifSerialPort.errorString());
         //QCoreApplication::exit(1); // FIXME - do something
     }
+}
+
+// ============================================================================== BLUETOOTH
+
+void WebSocketClient::handleBluetoothConnection() {
+
+}
+
+void WebSocketClient::handleBluetoothData(QByteArray data) {
+    QJsonObject json;
+    json["type"] = QJsonValue("read");
+    json["data"] = QJsonValue(QString::fromUtf8(data));
+    send(json);
 }

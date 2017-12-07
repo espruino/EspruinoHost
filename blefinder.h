@@ -15,6 +15,9 @@ public:
 
     QList<QBluetoothDeviceInfo> getDevices();
     void forceStop();
+    const QBluetoothDeviceInfo *findDeviceByAddress(QString address);
+
+    QString getDeviceAddress(const QBluetoothDeviceInfo &device);
 
 signals:
 

@@ -7,7 +7,7 @@ Put in the same folder as the executable
 
 ### LINUX
 
-You need to install these dependencies before building or Bluetooth will silently fall back to a dummy version
+You need to install these dependencies *before installing Qt and building* or Bluetooth will silently fall back to a dummy version
 
 ```
 sudo apt-get install libbluetooth-dev bluetooth blueman bluez libusb-dev libdbus-1-dev bluez-hcidump bluez-tools
@@ -37,6 +37,7 @@ sudo apt-get install libbluetooth-dev bluetooth blueman bluez libusb-dev libdbus
 
 ```
 {"type":"connect","interface":"serial","path":"/dev/ttyACM0","baud":9600}
+{"type":"connect","interface":"bluetooth","path":"C1:6F:4D:4A:C1:27"}
 
 {"type":"connect"}
 or

@@ -29,13 +29,15 @@ SOURCES += \
         mainwindow.cpp \
     sslserver.cpp \
     websocketclient.cpp \
-    blefinder.cpp
+    blefinder.cpp \
+    bleuart.cpp
 
 HEADERS += \
         mainwindow.h \
     sslserver.h \
     websocketclient.h \
-    blefinder.h
+    blefinder.h \
+    bleuart.h
 
 FORMS += \
         mainwindow.ui

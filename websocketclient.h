@@ -3,6 +3,7 @@
 
 #include <QObject>
 #include <QSerialPort>
+#include "bleuart.h"
 
 QT_FORWARD_DECLARE_CLASS(QWebSocket)
 QT_FORWARD_DECLARE_CLASS(QJsonObject)
@@ -24,15 +25,19 @@ public:
 private:
     MainWindow *m_pMainWindow;
 
-    enum { CT_DISCONNECTED, CT_SERIALPORT } m_connectionType;
+    enum { CT_DISCONNECTED, CT_SERIALPORT, CT_BLUETOOTH } m_connectionType;
     int m_bytesWriting;
     // Interfaces
     QSerialPort m_ifSerialPort;
+    BleUART m_ifBluetooth;
 
 private slots:
     void handleSerialReadyRead();
     void handleSerialBytesWritten(qint64 bytes);
     void handleSerialError(QSerialPort::SerialPortError error);
+
+    void handleBluetoothConnection();
+    void handleBluetoothData(QByteArray data);
 
 signals:
 

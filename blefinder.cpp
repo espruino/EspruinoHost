@@ -8,14 +8,14 @@ BleFinder::BleFinder(QObject *parent) :
     m_scanTimer(nullptr)
 {
     m_deviceDiscoveryAgent = new QBluetoothDeviceDiscoveryAgent(this);
-    m_deviceDiscoveryAgent->setLowEnergyDiscoveryTimeout(0); // always keep going
+    m_deviceDiscoveryAgent->setLowEnergyDiscoveryTimeout(5000); // FIXME? 0 => always keep going
 
     connect(m_deviceDiscoveryAgent, &QBluetoothDeviceDiscoveryAgent::deviceDiscovered, this, &BleFinder::addDevice);
     connect(m_deviceDiscoveryAgent, static_cast<void (QBluetoothDeviceDiscoveryAgent::*)(QBluetoothDeviceDiscoveryAgent::Error)>(&QBluetoothDeviceDiscoveryAgent::error),
             this, &BleFinder::scanError);
 
     m_scanTimer.setSingleShot(true);
-    m_scanTimer.setInterval(2000);
+    m_scanTimer.setInterval(5000);
     connect(&m_scanTimer, &QTimer::timeout, this, &BleFinder::handleDiscoveryTimeout);
     //    m_scanTimer.start();
 
@@ -42,10 +42,33 @@ QList<QBluetoothDeviceInfo> BleFinder::getDevices()
 
 void BleFinder::forceStop()
 {
-    qDebug() << "BLE: Force stopping scan";
+    qDebug() << "BLE: Force stop scan";
     m_scanTimer.stop();
     m_deviceDiscoveryAgent->stop();
 }
+
+const QBluetoothDeviceInfo *BleFinder::findDeviceByAddress(QString address)
+{
+    const QBluetoothDeviceInfo *device = 0;
+    for (int i = 0; i < m_devices.size(); i++) {
+        if (getDeviceAddress(m_devices.at(i)) == address ) {
+            device = &m_devices.at(i);
+            break;
+        }
+    }
+    return device;
+}
+
+QString BleFinder::getDeviceAddress(const QBluetoothDeviceInfo &device) {
+#if defined Q_OS_DARWIN
+    // workaround for Core Bluetooth:
+    return device.deviceUuid().toString();
+#else
+    return device.address().toString();
+#endif
+}
+
+// ==================================================================================================================
 
 void BleFinder::addDevice(const QBluetoothDeviceInfo &device)
 {
