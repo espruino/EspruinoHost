@@ -80,6 +80,8 @@ or
 TODO
 ----
 
+* Send 'status' messages during BLE connect to avoid the multi-second second pause during connection
+* Deal with BLE connection errors properly (probably not handled right at the moment)
 * `QSettings` to store persistent settings
 * Ability to access local files *within some predefined directory* - for modules/etc
 * Have option to download IDE locally (as a zip?), then serve the whole thing up over the WebSocket URL
