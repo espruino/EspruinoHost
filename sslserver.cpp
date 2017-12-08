@@ -1,16 +1,15 @@
 #include "sslserver.h"
 #include "QtWebSockets/QWebSocketServer"
 #include "QtWebSockets/QWebSocket"
-#include <QtCore/QDebug>
+#include "app.h"
 #include <QtCore/QFile>
 #include <QtNetwork/QSslCertificate>
 #include <QtNetwork/QSslKey>
 
 #include "websocketclient.h"
 
-SslServer::SslServer(QObject *parent, MainWindow *mainWindow) :
+SslServer::SslServer(QObject *parent) :
     QObject(parent),
-    m_pMainWindow(mainWindow),
     m_pWebSocketServer(nullptr)
 {
     m_pWebSocketServer = new QWebSocketServer(QStringLiteral("SSL Echo Server"),
@@ -35,7 +34,7 @@ SslServer::SslServer(QObject *parent, MainWindow *mainWindow) :
 
     if (m_pWebSocketServer->listen(QHostAddress::Any, port))
     {
-        qDebug() << "SSL Echo Server listening on port" << port;
+        g_app->status(QString("WebSocket listening on wss://localhost:") + QString::number(port));
         connect(m_pWebSocketServer, &QWebSocketServer::newConnection,
                 this, &SslServer::onNewConnection);
         connect(m_pWebSocketServer, &QWebSocketServer::sslErrors,
@@ -53,16 +52,17 @@ SslServer::~SslServer()
 void SslServer::onNewConnection()
 {
     QWebSocket *pSocket = m_pWebSocketServer->nextPendingConnection();
-    WebSocketClient *wsClient = new WebSocketClient(nullptr, m_pMainWindow);
+    WebSocketClient *wsClient = new WebSocketClient(nullptr);
     wsClient->pWebSocket = pSocket;
 
-    qDebug() << "Client connected:" << pSocket->peerName() << pSocket->origin();
+    g_app->log(QString("WebSocket Client connected:") + pSocket->peerName() + " " + pSocket->origin());
 
     connect(pSocket, &QWebSocket::textMessageReceived, this, &SslServer::processTextMessage);
     connect(pSocket, &QWebSocket::binaryMessageReceived, this, &SslServer::processBinaryMessage);
     connect(pSocket, &QWebSocket::disconnected, this, &SslServer::socketDisconnected);
 
     m_clients << wsClient;
+    g_app->status(QString::number(m_clients.length()) + QString(" clients connected"));
 }
 
 void SslServer::processTextMessage(QString message)
@@ -74,23 +74,24 @@ void SslServer::processTextMessage(QString message)
 
 void SslServer::processBinaryMessage(QByteArray message)
 {
-    qDebug() << "Binary WebSocket message not handled";
+    g_app->warn("Binary WebSocket message not handled");
 }
 
 void SslServer::socketDisconnected()
 {
-    qDebug() << "Client disconnected";
+    g_app->log("WebSocket Client disconnected");
     QWebSocket *pClient = qobject_cast<QWebSocket *>(sender());
     WebSocketClient *wsClient = SslServer::findClientForSocket(pClient);
     if (wsClient) {
         m_clients.removeAll(wsClient);
         wsClient->deleteLater();
     }
+    g_app->status(QString::number(m_clients.length()) + QString(" clients connected"));
 }
 
 void SslServer::onSslErrors(const QList<QSslError> &)
 {
-    qDebug() << "Ssl errors occurred";
+    g_app->error("SSL errors occurred");
 }
 
 WebSocketClient *SslServer::findClientForSocket(QWebSocket* socket)

@@ -1,10 +1,9 @@
+#include "app.h"
 #include "bleuart.h"
 
 #define NORDIC_SERVICE QString("6e400001-b5a3-f393-e0a9-e50e24dcca9e")
 #define NORDIC_TX QString("6e400002-b5a3-f393-e0a9-e50e24dcca9e")
 #define NORDIC_RX QString("6e400003-b5a3-f393-e0a9-e50e24dcca9e")
-
-
 
 
 BleUART::BleUART(QObject *parent) :
@@ -34,38 +33,40 @@ void BleUART::connectToDevice(QBluetoothDeviceInfo device)
 }
 
 BleUART::~BleUART() {
-    m_control->disconnectFromDevice();
-    delete m_control;
+    if (m_control) {
+          m_control->disconnectFromDevice();
+          delete m_control;
+    }
 }
 
 void BleUART::handleConnected()
 {
-    qDebug() << "Controller connected. Search services...";
+    g_app->log("BLE: Controller connected. Search services...");
     m_control->discoverServices();
 }
 
 void BleUART::handleDisconnected()
 {
-    qDebug() << "LowEnergy controller disconnected";
+    g_app->log("BLE: LowEnergy controller disconnected");
 }
 
 void BleUART::handleError(QLowEnergyController::Error error)
 {
     Q_UNUSED(error);
-    qDebug() << "Cannot connect to remote device.";
+    g_app->error("BLE: Cannot connect to remote device.");
 }
 
 void BleUART::serviceDiscovered(const QBluetoothUuid &gatt)
 {
     if (gatt == QBluetoothUuid(NORDIC_SERVICE)) {
         m_foundUARTService = true;
-        qDebug() << "UART Service found.";
+        g_app->log("BLE: UART Service found.");
     }
 }
 
 void BleUART::serviceScanDone()
 {
-    qDebug() << "Service scan done.";
+    g_app->log("BLE: Service scan done.");
 
     // Delete old service if available
     if (m_service) {
@@ -82,7 +83,7 @@ void BleUART::serviceScanDone()
         connect(m_service, &QLowEnergyService::descriptorWritten, this, &BleUART::confirmedDescriptorWrite);
         m_service->discoverDetails();
     } else {
-        qDebug() << "UART Service not found.";
+        g_app->error("BLE: UART Service not found.");
     }
 }
 
@@ -90,25 +91,24 @@ void BleUART::serviceStateChanged(QLowEnergyService::ServiceState s)
 {
     switch (s) {
     case QLowEnergyService::DiscoveringServices:
-        qDebug() << "Discovering services...";
+        g_app->log("BLE: Discovering services...");
         break;
     case QLowEnergyService::ServiceDiscovered:
     {
-        qDebug() << "Service discovered.";
+        g_app->log("BLE: Service discovered.");
 
         m_txChar = m_service->characteristic(QBluetoothUuid(NORDIC_TX));
         if (!m_txChar.isValid()) {
-            qDebug() << "TX Characteristic not found.";
+            g_app->error("BLE: TX Characteristic not found.");
         }
         m_rxChar = m_service->characteristic(QBluetoothUuid(NORDIC_RX));
         if (!m_rxChar.isValid()) {
-            qDebug() << "RX Characteristic not found.";
-            break;
+            g_app->error("BLE: RX Characteristic not found.");
+        } else {
+            m_rxDesc = m_rxChar.descriptor(QBluetoothUuid::ClientCharacteristicConfiguration);
+            if (m_rxDesc.isValid())
+                m_service->writeDescriptor(m_rxDesc, QByteArray::fromHex("0100"));
         }
-
-        m_rxDesc = m_rxChar.descriptor(QBluetoothUuid::ClientCharacteristicConfiguration);
-        if (m_rxDesc.isValid())
-            m_service->writeDescriptor(m_rxDesc, QByteArray::fromHex("0100"));
 
         break;
     }
@@ -122,7 +122,7 @@ void BleUART::serviceStateChanged(QLowEnergyService::ServiceState s)
 
 void BleUART::updateCharacteristicValue(const QLowEnergyCharacteristic &c, const QByteArray &value)
 {
-    qDebug() << "Characteristic changed" << QString::fromUtf8(value);
+    g_app->log("BLE: Characteristic changed" + QString::fromUtf8(value));
 
     if (c.uuid() != QBluetoothUuid(NORDIC_RX))
         return;

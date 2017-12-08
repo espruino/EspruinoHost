@@ -25,24 +25,29 @@ DEFINES += QT_DEPRECATED_WARNINGS
 
 
 SOURCES += \
-        main.cpp \
-        mainwindow.cpp \
+    main.cpp \
+    mainwindow.cpp \
     sslserver.cpp \
     websocketclient.cpp \
     blefinder.cpp \
-    bleuart.cpp
+    bleuart.cpp \
+    app.cpp
 
 HEADERS += \
-        mainwindow.h \
+    mainwindow.h \
     sslserver.h \
     websocketclient.h \
     blefinder.h \
-    bleuart.h
+    bleuart.h \
+    app.h
 
 FORMS += \
-        mainwindow.ui
+    mainwindow.ui
 
 DISTFILES += \
     README.md \
     localhost.key \
     localhost.cert
+
+# For windows, we'll have a resource file with the icon in
+#RC_FILE = resources/app.rc

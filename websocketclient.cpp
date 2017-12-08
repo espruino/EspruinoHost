@@ -1,18 +1,18 @@
 #include "websocketclient.h"
-#include "mainwindow.h"
+#include "app.h"
+#include "blefinder.h"
+#include "bleuart.h"
 
 #include <QJsonObject>
 #include <QJsonArray>
 #include <QJsonDocument>
-#include <QtCore/QDebug>
 #include <QSerialPortInfo>
 #include <QtSerialPort/QtSerialPort>
 #include "QtWebSockets/QWebSocket"
 
-WebSocketClient::WebSocketClient(QObject *parent, MainWindow *mainWindow) :
+WebSocketClient::WebSocketClient(QObject *parent) :
     QObject(parent),
     pWebSocket(nullptr),
-    m_pMainWindow(mainWindow),
     m_connectionType(CT_DISCONNECTED),
     m_bytesWriting(0),
     m_ifSerialPort(this),
@@ -36,12 +36,17 @@ void WebSocketClient::receive(QString message) // data received from remote comp
 {
     QJsonObject json = QJsonDocument::fromJson(message.toUtf8()).object();
     if (json["type"].isNull()) {
-        qDebug() << "No JSON 'type' - ignoring";
+        g_app->warn("No JSON 'type' - ignoring packet");
         return;
     }
     QString jType = json["type"].toString();
-    qDebug() << "JSON type " << jType;
-    if (jType=="list") {
+    g_app->log("JSON type " + jType);
+    if (jType=="version") {
+        QJsonObject json;
+        json["type"] = QJsonValue("version");
+        json["version"] = QJsonValue(APP_VERSION);
+        send(json);
+    } else if (jType=="list") {
         QJsonObject json;
         json["type"] = QJsonValue("list");
         QJsonArray jsPortList;
@@ -56,7 +61,7 @@ void WebSocketClient::receive(QString message) // data received from remote comp
             jsPortList.append(jsPort);
         }
         // Bluetooth
-        QList<QBluetoothDeviceInfo> bleDevices = m_pMainWindow->m_bleFinder->getDevices();
+        QList<QBluetoothDeviceInfo> bleDevices = g_app->m_bleFinder->getDevices();
         for (int i=0; i<bleDevices.size();i++) {
             const QBluetoothDeviceInfo &bleDevice = bleDevices.at(i);
             if (bleDevice.isCached() || !bleDevice.isValid()) continue;
@@ -64,7 +69,7 @@ void WebSocketClient::receive(QString message) // data received from remote comp
             jsPort["interface"] = QJsonValue("bluetooth");
             jsPort["description"] = QJsonValue(bleDevice.name());
             jsPort["rssi"] = QJsonValue(bleDevice.rssi());
-            jsPort["path"] = QJsonValue(m_pMainWindow->m_bleFinder->getDeviceAddress(bleDevice));
+            jsPort["path"] = QJsonValue(g_app->m_bleFinder->getDeviceAddress(bleDevice));
             jsPortList.append(jsPort);
         }
         // Send response
@@ -72,7 +77,7 @@ void WebSocketClient::receive(QString message) // data received from remote comp
         send(json);
     } else if (jType=="connect") {
         if (m_connectionType!=CT_DISCONNECTED) {
-            qDebug() << "Already connected";
+            g_app->warn("Already connected");
             return;
         }
 
@@ -95,9 +100,9 @@ void WebSocketClient::receive(QString message) // data received from remote comp
                 send(json);
             }
         } else if (jInterface=="bluetooth") {
-            const QBluetoothDeviceInfo *device = m_pMainWindow->m_bleFinder->findDeviceByAddress(jPath);
+            const QBluetoothDeviceInfo *device = g_app->m_bleFinder->findDeviceByAddress(jPath);
             if (device) {
-                m_pMainWindow->m_bleFinder->forceStop();
+                g_app->m_bleFinder->forceStop();
                 m_ifBluetooth.connectToDevice(*device);
                 send("{\"type\":\"connect\"}");
                 m_connectionType=CT_BLUETOOTH;
@@ -108,7 +113,7 @@ void WebSocketClient::receive(QString message) // data received from remote comp
                 send(json);
             }
         } else{
-            qDebug() << "Unknown interface " << jInterface << " for 'connect'";
+            g_app->warn("Unknown interface " + jInterface + " for 'connect'");
         }
     } else if (jType=="disconnect") {
         if (m_connectionType==CT_SERIALPORT) {
@@ -118,7 +123,7 @@ void WebSocketClient::receive(QString message) // data received from remote comp
             m_ifBluetooth.disconnect();
             m_connectionType = CT_DISCONNECTED;
         } else {
-            qDebug() << "Not connected for disconnect";
+            g_app->warn("Not connected for disconnect");
         }
     } else if (jType=="write") {
         QString jData = json["data"].toString();
@@ -130,10 +135,10 @@ void WebSocketClient::receive(QString message) // data received from remote comp
         } else if (m_connectionType==CT_BLUETOOTH) {
             m_ifBluetooth.write(arr);
         } else {
-            qDebug() << "Not connected for write";
+            g_app->warn("Not connected for write");
         }
     } else {
-        qDebug() << "Unknown command type " << jType;
+        g_app->warn( "Unknown command type " + jType);
     }
 }
 
@@ -173,18 +178,13 @@ void WebSocketClient::handleSerialBytesWritten(qint64 bytes)
 
 void WebSocketClient::handleSerialError(QSerialPort::SerialPortError serialPortError)
 {
+    if (serialPortError == QSerialPort::SerialPortError::NoError) return; // ???
     QJsonObject json;
     json["type"] = QJsonValue("error");
     QMetaEnum metaEnum = QMetaEnum::fromType<QSerialPort::SerialPortError>();
     json["message"] = QJsonValue(metaEnum.valueToKey(serialPortError));
     send(json);
-    if (serialPortError == QSerialPort::ReadError) {
-        qDebug() << QObject::tr("An I/O error occurred while reading "
-                                        "the data from port %1, error: %2")
-                            .arg(m_ifSerialPort.portName())
-                            .arg(m_ifSerialPort.errorString());
-        //QCoreApplication::exit(1); // FIXME - do something
-    }
+    g_app->error(QString("Serial ") + metaEnum.valueToKey(serialPortError)+ " occurred on "+m_ifSerialPort.portName()+" - "+m_ifSerialPort.errorString());
 }
 
 // ============================================================================== BLUETOOTH

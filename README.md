@@ -1,5 +1,13 @@
+Espruino Host
+=============
+
+Tool to run in the background and provide a WebSocket server
+that http://espruino.com/ide can use to access BLE and Serial
+devices.
 
 
+Setup
+-----
 
 openssl req -newkey rsa:2048 -nodes -keyout localhost.key -x509 -days 365 -out localhost.cert
 
@@ -14,6 +22,13 @@ sudo apt-get install libbluetooth-dev bluetooth blueman bluez libusb-dev libdbus
 ```
 
 
+```
+{"type":"version"}
+{
+    "type": "version",
+    "version": "0.1"
+}
+```
 
 ```
 {"type":"list"}
@@ -51,3 +66,11 @@ or
 // when write complete...
 {"type":"write",count:234}
 ```
+
+
+TODO
+----
+
+* `QSettings` to store persistent settings
+* Ability to access local files *within some predefined directory* - for modules/etc
+*

@@ -1,5 +1,5 @@
+#include "app.h"
 #include "blefinder.h"
-#include <QtCore/QDebug>
 #include <QMetaEnum>
 
 BleFinder::BleFinder(QObject *parent) :
@@ -31,7 +31,7 @@ BleFinder::~BleFinder()
 QList<QBluetoothDeviceInfo> BleFinder::getDevices()
 {
     if (!m_deviceDiscoveryAgent->isActive()) {
-        qDebug() << "Starting scan";
+        g_app->log("BLE: Starting scan");
         m_deviceDiscoveryAgent->start(QBluetoothDeviceDiscoveryAgent::LowEnergyMethod);
     }
     // if the timer is running, it'll be restarted
@@ -42,7 +42,7 @@ QList<QBluetoothDeviceInfo> BleFinder::getDevices()
 
 void BleFinder::forceStop()
 {
-    qDebug() << "BLE: Force stop scan";
+    g_app->log("BLE: Force stop scan");
     m_scanTimer.stop();
     m_deviceDiscoveryAgent->stop();
 }
@@ -75,18 +75,18 @@ void BleFinder::addDevice(const QBluetoothDeviceInfo &device)
     // If device is LowEnergy-device, add it to the list
     if (device.coreConfigurations() & QBluetoothDeviceInfo::LowEnergyCoreConfiguration) {
         m_devices.append(device);
-        qDebug() << "BLE: device found:" << device.name();
+        g_app->log("BLE: device found:" + device.name());
     }
 }
 
 void BleFinder::scanError(QBluetoothDeviceDiscoveryAgent::Error error)
 {
     QMetaEnum metaEnum = QMetaEnum::fromType<QBluetoothDeviceDiscoveryAgent::Error>();
-    qDebug() << "SCAN ERROR " << metaEnum.valueToKey(error);
+    g_app->error(QString("SCAN ERROR ") + metaEnum.valueToKey(error));
 }
 
 void BleFinder::handleDiscoveryTimeout()
 {
-    qDebug() << "BLE: Stopping scan after inactivity";
+    g_app->log("BLE: Stopping scan after inactivity");
     m_deviceDiscoveryAgent->stop();
 }

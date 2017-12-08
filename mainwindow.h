@@ -17,11 +17,13 @@ public:
     explicit MainWindow(QWidget *parent = 0);
     ~MainWindow();
 
-    SslServer *m_server;
-    BleFinder *m_bleFinder;
+    void addLogMessage(QString html);
+    void setStatus(QString msg);
 
 private slots:
     void on_actionQuit_triggered();
+
+    void on_actionAbout_triggered();
 
 private:
     Ui::MainWindow *ui;

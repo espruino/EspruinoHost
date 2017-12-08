@@ -13,7 +13,7 @@ class WebSocketClient : public QObject
 {
     Q_OBJECT
 public:
-    explicit WebSocketClient(QObject *parent = nullptr, MainWindow *mainWindow = nullptr);
+    explicit WebSocketClient(QObject *parent = nullptr);
     ~WebSocketClient();
 
     void receive(QString message); // data received from remote computer
@@ -23,8 +23,6 @@ public:
     QWebSocket *pWebSocket;
 
 private:
-    MainWindow *m_pMainWindow;
-
     enum { CT_DISCONNECTED, CT_SERIALPORT, CT_BLUETOOTH } m_connectionType;
     int m_bytesWriting;
     // Interfaces
