@@ -12,7 +12,7 @@ SslServer::SslServer(QObject *parent) :
     QObject(parent),
     m_pWebSocketServer(nullptr)
 {
-    m_pWebSocketServer = new QWebSocketServer(QStringLiteral("SSL Echo Server"),
+    m_pWebSocketServer = new QWebSocketServer(QStringLiteral("SSL Espruino Host"),
                                               QWebSocketServer::SecureMode,
                                               this);
     QSslConfiguration sslConfiguration;
