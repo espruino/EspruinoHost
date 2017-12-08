@@ -8,6 +8,8 @@ QT_FORWARD_DECLARE_CLASS(BleFinder)
 QT_FORWARD_DECLARE_CLASS(MainWindow)
 
 #define APP_VERSION "0.1"
+#define WEBSOCKET_PORT 31234
+#define BLE_MAX_WRITE_SIZE 20
 
 class App : public QObject
 {

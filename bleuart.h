@@ -25,6 +25,8 @@ private:
     QLowEnergyCharacteristic m_rxChar;
     QLowEnergyDescriptor m_rxDesc;
 
+    QByteArray bleWriteQueue;
+
     void handleConnected();
     void handleDisconnected();
     void handleError(QLowEnergyController::Error error);

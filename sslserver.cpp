@@ -30,7 +30,7 @@ SslServer::SslServer(QObject *parent) :
     sslConfiguration.setProtocol(QSsl::TlsV1SslV3);
     m_pWebSocketServer->setSslConfiguration(sslConfiguration);
 
-    int port = 31234;
+    int port = WEBSOCKET_PORT;
 
     if (m_pWebSocketServer->listen(QHostAddress::Any, port))
     {

@@ -152,14 +152,28 @@ void BleUART::confirmedCharacteristicWrite(const QLowEnergyCharacteristic &d, co
 {
     //g_app->log("BLE: Characteristic written" + QString::fromUtf8(value));
     if (d==m_txChar) {
-        emit dataWritten();
+        if (bleWriteQueue.length() == 0)
+            emit dataWritten();
+        else {
+            if (m_service) {
+                QByteArray data = bleWriteQueue.left(BLE_MAX_WRITE_SIZE);
+                bleWriteQueue.remove(0,BLE_MAX_WRITE_SIZE);
+                m_service->writeCharacteristic(m_txChar, data, QLowEnergyService::WriteWithResponse);
+            }
+        }
+
     } else {
         g_app->warn("BLE: Unknown Characteristic written");
     }
 }
 
 void BleUART::write(QByteArray data) {
-    if (m_txChar.isValid()) {
+    if (m_txChar.isValid() && m_service) {
+        if (data.length() > BLE_MAX_WRITE_SIZE) {
+            bleWriteQueue.append(data);
+            data = bleWriteQueue.left(BLE_MAX_WRITE_SIZE);
+            bleWriteQueue.remove(0,BLE_MAX_WRITE_SIZE);
+        }
         m_service->writeCharacteristic(m_txChar, data, QLowEnergyService::WriteWithResponse);
     }
 }
