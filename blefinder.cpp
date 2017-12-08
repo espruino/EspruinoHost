@@ -1,6 +1,9 @@
 #include "app.h"
 #include "blefinder.h"
 #include <QMetaEnum>
+#if defined Q_OS_DARWIN
+#include <QBluetoothUuid>
+#endif
 
 BleFinder::BleFinder(QObject *parent) :
     QObject(parent),
