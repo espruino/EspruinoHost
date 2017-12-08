@@ -47,7 +47,12 @@ void BleUART::handleConnected()
 
 void BleUART::handleDisconnected()
 {
+    if (m_service) {
+        delete m_service;
+        m_service = 0;
+    }
     g_app->log("BLE: LowEnergy controller disconnected");
+    emit connectionChanged(false); // disconnected
 }
 
 void BleUART::handleError(QLowEnergyController::Error error)
@@ -81,6 +86,7 @@ void BleUART::serviceScanDone()
         connect(m_service, &QLowEnergyService::stateChanged, this, &BleUART::serviceStateChanged);
         connect(m_service, &QLowEnergyService::characteristicChanged, this, &BleUART::updateCharacteristicValue);
         connect(m_service, &QLowEnergyService::descriptorWritten, this, &BleUART::confirmedDescriptorWrite);
+        connect(m_service, &QLowEnergyService::characteristicWritten, this, &BleUART::confirmedCharacteristicWrite);
         m_service->discoverDetails();
     } else {
         g_app->error("BLE: UART Service not found.");
@@ -109,30 +115,31 @@ void BleUART::serviceStateChanged(QLowEnergyService::ServiceState s)
             if (m_rxDesc.isValid())
                 m_service->writeDescriptor(m_rxDesc, QByteArray::fromHex("0100"));
         }
-
         break;
     }
     default:
         //nothing for now
         break;
-    }
-
-    emit connectionChanged();
+    }    
 }
 
 void BleUART::updateCharacteristicValue(const QLowEnergyCharacteristic &c, const QByteArray &value)
 {
-    g_app->log("BLE: Characteristic changed" + QString::fromUtf8(value));
-
-    if (c.uuid() != QBluetoothUuid(NORDIC_RX))
-        return;
-
-    //const quint8 *data = reinterpret_cast<const quint8 *>(value.constData());
-    emit dataReceived(value);
+    if (c == m_rxChar) {
+        g_app->log("BLE: RX Characteristic changed");
+        //const quint8 *data = reinterpret_cast<const quint8 *>(value.constData());
+        emit dataReceived(value);
+    } else {
+        g_app->warn("BLE: Unknown Characteristic changed");
+    }
 }
 
 void BleUART::confirmedDescriptorWrite(const QLowEnergyDescriptor &d, const QByteArray &value)
-{
+{    
+    if (d.isValid() && d == m_rxDesc && value == QByteArray::fromHex("0100")) {
+        g_app->log("BLE: Descriptor written - notifications enabled");
+        emit connectionChanged(true); // properly connected
+    }
     if (d.isValid() && d == m_rxDesc && value == QByteArray::fromHex("0000")) {
         //disabled notifications -> assume disconnect intent
         m_control->disconnectFromDevice();
@@ -141,9 +148,19 @@ void BleUART::confirmedDescriptorWrite(const QLowEnergyDescriptor &d, const QByt
     }
 }
 
+void BleUART::confirmedCharacteristicWrite(const QLowEnergyCharacteristic &d, const QByteArray &value)
+{
+    //g_app->log("BLE: Characteristic written" + QString::fromUtf8(value));
+    if (d==m_txChar) {
+        emit dataWritten();
+    } else {
+        g_app->warn("BLE: Unknown Characteristic written");
+    }
+}
+
 void BleUART::write(QByteArray data) {
     if (m_txChar.isValid()) {
-        m_service->writeCharacteristic(m_txChar, data, QLowEnergyService::WriteWithoutResponse);
+        m_service->writeCharacteristic(m_txChar, data, QLowEnergyService::WriteWithResponse);
     }
 }
 

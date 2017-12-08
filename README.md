@@ -23,17 +23,18 @@ sudo apt-get install libbluetooth-dev bluetooth blueman bluez libusb-dev libdbus
 
 
 ```
-{"type":"version"}
-{
+-> {"type":"version"}
+
+<- {
     "type": "version",
     "version": "0.1"
 }
 ```
 
 ```
-{"type":"list"}
+-> {"type":"list"}
 
-{
+<- {
     "ports": [
         {
             "description": "STM32 Virtual ComPort",
@@ -51,20 +52,28 @@ sudo apt-get install libbluetooth-dev bluetooth blueman bluez libusb-dev libdbus
 ```
 
 ```
-{"type":"connect","interface":"serial","path":"/dev/ttyACM0","baud":9600}
-{"type":"connect","interface":"bluetooth","path":"C1:6F:4D:4A:C1:27"}
+-> {"type":"connect","interface":"serial","path":"/dev/ttyACM0","baud":9600}
+-> {"type":"connect","interface":"bluetooth","path":"C1:6F:4D:4A:C1:27"}
 
-{"type":"connect"}
+<- {"type":"connect"}
 or
-{"type":"error", "message":""}
+<- {"type":"error", "message":""}
 ```
 
 ```
-{"type":"write","data":"\u0003"}
-{"type":"write","data":"LED.set()\r\n"}
+-> {"type":"write","data":"\u0003"}
+-> {"type":"write","data":"LED.set()\r\n"}
 
 // when write complete...
-{"type":"write",count:234}
+<- {"type":"write",count:234}
+```
+
+```
+<- {"type":"read","data":" ... "}
+```
+
+```
+-> {"type":"disconnect"}
 ```
 
 

@@ -34,8 +34,9 @@ private slots:
     void handleSerialBytesWritten(qint64 bytes);
     void handleSerialError(QSerialPort::SerialPortError error);
 
-    void handleBluetoothConnection();
+    void handleBluetoothConnection(bool connected);
     void handleBluetoothData(QByteArray data);
+    void handleBluetoothWritten();
 
 signals:
 

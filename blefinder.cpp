@@ -24,7 +24,6 @@ BleFinder::BleFinder(QObject *parent) :
 
 BleFinder::~BleFinder()
 {
-    // qDeleteAll(m_devices); // we don't own these devices
     m_devices.clear();
 }
 
@@ -32,6 +31,7 @@ QList<QBluetoothDeviceInfo> BleFinder::getDevices()
 {
     if (!m_deviceDiscoveryAgent->isActive()) {
         g_app->log("BLE: Starting scan");
+        m_devices.clear();
         m_deviceDiscoveryAgent->start(QBluetoothDeviceDiscoveryAgent::LowEnergyMethod);
     }
     // if the timer is running, it'll be restarted

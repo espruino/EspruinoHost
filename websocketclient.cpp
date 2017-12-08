@@ -24,6 +24,7 @@ WebSocketClient::WebSocketClient(QObject *parent) :
 
     connect(&m_ifBluetooth, &BleUART::connectionChanged, this, &WebSocketClient::handleBluetoothConnection);
     connect(&m_ifBluetooth, &BleUART::dataReceived, this, &WebSocketClient::handleBluetoothData);
+    connect(&m_ifBluetooth, &BleUART::dataWritten, this, &WebSocketClient::handleBluetoothWritten);
 
 }
 
@@ -104,7 +105,6 @@ void WebSocketClient::receive(QString message) // data received from remote comp
             if (device) {
                 g_app->m_bleFinder->forceStop();
                 m_ifBluetooth.connectToDevice(*device);
-                send("{\"type\":\"connect\"}");
                 m_connectionType=CT_BLUETOOTH;
             } else {
                 QJsonObject json;
@@ -189,8 +189,18 @@ void WebSocketClient::handleSerialError(QSerialPort::SerialPortError serialPortE
 
 // ============================================================================== BLUETOOTH
 
-void WebSocketClient::handleBluetoothConnection() {
-
+void WebSocketClient::handleBluetoothConnection(bool connected) {
+    if (connected) {
+        QJsonObject json;
+        json["type"] = QJsonValue("connect");
+        send(json);
+    } else {
+        m_ifBluetooth.disconnect();
+        m_connectionType = CT_DISCONNECTED;
+        QJsonObject json;
+        json["type"] = QJsonValue("disconnect");
+        send(json);
+    }
 }
 
 void WebSocketClient::handleBluetoothData(QByteArray data) {
@@ -199,3 +209,10 @@ void WebSocketClient::handleBluetoothData(QByteArray data) {
     json["data"] = QJsonValue(QString::fromUtf8(data));
     send(json);
 }
+
+void WebSocketClient::handleBluetoothWritten() {
+    QJsonObject json;
+    json["type"] = QJsonValue("write");
+    send(json);
+}
+

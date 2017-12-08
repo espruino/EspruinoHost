@@ -36,12 +36,15 @@ private:
     //QLowEnergyService
     void serviceStateChanged(QLowEnergyService::ServiceState s);
     void updateCharacteristicValue(const QLowEnergyCharacteristic &c,
-                              const QByteArray &value);
+                                   const QByteArray &value);
     void confirmedDescriptorWrite(const QLowEnergyDescriptor &d,
-                              const QByteArray &value);
+                                  const QByteArray &value);
+    void confirmedCharacteristicWrite(const QLowEnergyCharacteristic &d,
+                                      const QByteArray &value);
 signals:
-    void connectionChanged();
+    void connectionChanged(bool connected);
     void dataReceived(QByteArray data);
+    void dataWritten();
 
 public slots:
 };

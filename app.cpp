@@ -46,7 +46,7 @@ void App::log(QString msg) {
 void App::warn(QString msg) {
     qDebug() << "WARN:" << msg;
     if (m_mainWindow)
-        m_mainWindow->addLogMessage("<p style=\"padding:0; margin:0;color:yellow\">"+msg+"</p>\n");
+        m_mainWindow->addLogMessage("<p style=\"padding:0; margin:0;color:#E67E22\">"+msg+"</p>\n");
 }
 void App::error(QString msg) {
     qDebug() << "ERROR:" << msg;
