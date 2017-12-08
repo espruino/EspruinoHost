@@ -51,3 +51,6 @@ DISTFILES += \
 
 # For windows, we'll have a resource file with the icon in
 #RC_FILE = resources/app.rc
+
+RESOURCES += \
+    app.qrc

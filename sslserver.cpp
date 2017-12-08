@@ -16,8 +16,8 @@ SslServer::SslServer(QObject *parent) :
                                               QWebSocketServer::SecureMode,
                                               this);
     QSslConfiguration sslConfiguration;
-    QFile certFile(QStringLiteral("localhost.cert"));
-    QFile keyFile(QStringLiteral("localhost.key"));
+    QFile certFile(QStringLiteral(":/keys/localhost.cert"));
+    QFile keyFile(QStringLiteral(":/keys/localhost.key"));
     certFile.open(QIODevice::ReadOnly);
     keyFile.open(QIODevice::ReadOnly);
     QSslCertificate certificate(&certFile, QSsl::Pem);
