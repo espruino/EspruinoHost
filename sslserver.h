@@ -5,6 +5,9 @@
 #include <QtCore/QList>
 #include <QtCore/QByteArray>
 #include <QtNetwork/QSslError>
+#include <QAbstractSocket>
+#include <QWebSocketProtocol>
+#include <QSslPreSharedKeyAuthenticator>
 #include "app.h"
 #include "websocketclient.h"
 
@@ -22,6 +25,10 @@ private:
 
 
 private Q_SLOTS:
+    void onAcceptError(QAbstractSocket::SocketError socketError);
+    void onPeerVerifyError(QSslError socketError);
+    void onPreSharedKeyAuthenticationRequired(QSslPreSharedKeyAuthenticator *authenticator);
+    void onServerError(QWebSocketProtocol::CloseCode closeCode);
     void onNewConnection();
     void processTextMessage(QString message);
     void processBinaryMessage(QByteArray message);

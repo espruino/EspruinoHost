@@ -1,7 +1,9 @@
 #include "sslserver.h"
+#include "app.h"
+
 #include "QtWebSockets/QWebSocketServer"
 #include "QtWebSockets/QWebSocket"
-#include "app.h"
+#include <QMetaEnum>
 #include <QtCore/QFile>
 #include <QtNetwork/QSslCertificate>
 #include <QtNetwork/QSslKey>
@@ -30,11 +32,20 @@ SslServer::SslServer(QObject *parent) :
     sslConfiguration.setProtocol(QSsl::TlsV1SslV3);
     m_pWebSocketServer->setSslConfiguration(sslConfiguration);
 
+
     int port = WEBSOCKET_PORT;
 
     if (m_pWebSocketServer->listen(QHostAddress::Any, port))
     {
         g_app->status(QString("WebSocket listening on wss://localhost:") + QString::number(port));
+        connect(m_pWebSocketServer, &QWebSocketServer::acceptError,
+                this, &SslServer::onAcceptError);
+        connect(m_pWebSocketServer, &QWebSocketServer::peerVerifyError,
+                this, &SslServer::onPeerVerifyError);
+        connect(m_pWebSocketServer, &QWebSocketServer::preSharedKeyAuthenticationRequired,
+                this, &SslServer::onPreSharedKeyAuthenticationRequired);
+        connect(m_pWebSocketServer, &QWebSocketServer::serverError,
+                this, &SslServer::onServerError);
         connect(m_pWebSocketServer, &QWebSocketServer::newConnection,
                 this, &SslServer::onNewConnection);
         connect(m_pWebSocketServer, &QWebSocketServer::sslErrors,
@@ -47,6 +58,25 @@ SslServer::~SslServer()
     m_pWebSocketServer->close();
     qDeleteAll(m_clients.begin(), m_clients.end());
     m_clients.clear();
+}
+
+void SslServer::onAcceptError(QAbstractSocket::SocketError socketError)
+{
+    QMetaEnum metaEnum = QMetaEnum::fromType<QAbstractSocket::SocketError>();
+    g_app->error(QString("WebSocket Accept Error:") + metaEnum.valueToKey(socketError));
+}
+
+void SslServer::onPeerVerifyError(QSslError socketError)
+{
+    g_app->error(QString("WebSocket Peer Verify Error:") + socketError.errorString());
+}
+
+void SslServer::onPreSharedKeyAuthenticationRequired(QSslPreSharedKeyAuthenticator *authenticator) {
+    g_app->warn(QString("preSharedKeyAuthenticationRequired"));
+}
+
+void SslServer::onServerError(QWebSocketProtocol::CloseCode closeCode) {
+    g_app->error(QString("WebSocket Server Error:") + QString::number((int)closeCode));
 }
 
 void SslServer::onNewConnection()
